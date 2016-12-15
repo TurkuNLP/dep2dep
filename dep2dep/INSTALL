@@ -1,0 +1,23 @@
+In order to successfully compile the lp2lp transformation library,
+you need to have the following environment:
+
+1) Installation of SWI prolog with the development tools
+   - header files in (by default) /usr/lib/swi-prolog/include (you can edit the Makefile if the headers are elsewhere)
+   - libraries (at least):
+        - libpl (prolog)
+        - libgmp (numerical library for prolog)
+   - the plld program (comes with SWI prolog)
+
+2) Installation of PCRE with the development tools
+   - header files (pcre.h)
+   - libraries
+        - libpcre
+
+
+3) Recent Python (tested with 2.4 and 2.5)
+
+Then just type 'make'.
+
+The setup is tested on Ubuntu Linux 7.04 as well as Gentoo linux
+with recent SWI prolog installed and PCRE install from the
+distro's package manager.
