@@ -1,4 +1,7 @@
 # On Ubuntu 16.04 (and probably other recent ones)
+
+The following is tested to work on the official [Ubuntu cloud image](https://help.ubuntu.com/lts/serverguide/cloud-images-and-uvtool.html)
+
 ```
 sudo apt install git build-essential swi-prolog-nox libpcre3-dev python-dev 
 git clone https://github.com/TurkuNLP/dep2dep.git
