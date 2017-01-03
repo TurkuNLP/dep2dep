@@ -35,130 +35,135 @@ lp2lp=LP2LP(LP2LPDIR) #Loads lp2lp
 
 #Here are the interface functions
 
+ID,FORM,LEMMA,FEAT,UPOS,XPOS,HEAD,DEPREL,DEPS,MISC=range(10)
+
+def read_conll(inp,maxsent=0):
+    """ Read conll format file and yield one sentence at a time as a list of lists of columns. If inp is a string it will be interpreted as filename, otherwise as open file for reading in unicode"""
+    if isinstance(inp,basestring):
+        f=codecs.open(inp,u"rt",u"utf-8")
+    else:
+        f=codecs.getreader("utf-8")(sys.stdin) # read stdin
+    count=0
+    sent=[]
+    comments=[]
+
+    for line in f:
+        line=line.strip()
+        if not line:
+            if sent:
+                count+=1
+                yield sent, comments
+                if maxsent!=0 and count>=maxsent:
+                    break
+                sent=[]
+                comments=[]
+        elif line.startswith(u"#"):
+            if sent:
+                raise ValueError("Missing newline after sentence")
+            comments.append(line)
+            continue
+        else:
+            sent.append(line.split(u"\t"))
+    else:
+        if sent:
+            yield sent, comments
+
+    if isinstance(inp,basestring):
+        f.close() #Close it if you opened it
+
+def dep_sets(tree):
+    deps=set() #(g,d,dtype)   #head+deprel
+    edeps=set() #(g,d,dtype)  #deps
+    for i,cols in enumerate(tree):
+        if cols[HEAD]!=u"0":
+            deps.add((int(cols[HEAD])-1,i,cols[DEPREL]))
+        if cols[DEPS]!=u"_":
+            for g_dtype in cols[DEPS].split(u"|"):
+                g,dtype=g_dtype.split(u":",1)
+                edeps.add((int(g)-1,i,dtype))
+    return deps,edeps
 
 def load_ruleset(fName):
     lp2lp.load_ruleset(fName)
 
-def transformSD2HKI(dTree,bare=False):
-    """This one is specific to the SD->H:ki scheme conversion
-    development. We expect a tree with dependency types prefixed "sd:"
-    for SD gold standard, "h:" for "H:ki-scheme gold standard". Then
-    we insert dependencies prefixed "cv:" which is the output of the
-    conversion. These will also carry a tag "correct,wrong,missing"
-    for hgs_ dependencies which are correctly produced, incorrectly
-    produced, or missing. These will later be visualized as
-    green,red,black.
+def transform_tree(tree):
+    """ Returns a new set of dependencies and enhanced dependencies"""
+    d2d_tokens=[]
+    d2d_lemmas=[]
+    d2d_features=[]
+    d2d_deps=[]
 
-
-    Later modified to also accept bare input, which is assume to be SD"""
-    
-    if len(dTree.deps)==0:
-        return
-
-#1) remember the original dependencies
-    sdGS=set() #(g,d,sd_dType)
-    hGS=set() #(g,d,h_dType)
-    for g,d,dType in dTree.deps:
-        if dType.startswith(u"sd:"):
-            sdGS.add((g,d,dType))
-        elif dType.startswith(u"h:"):
-            hGS.add((g,d,dType))
-        else: #Fallback in case we have no sd:/h: marking - assume SD
-            sdGS.add((g,d,u"sd:"+dType))
-#2) now create a version of the sentence with just the SD dependencies to convert
-    dTree.origDeps=dTree.deps
-    dTree.deps={}
-    for (g,d,sd_dType) in sdGS:
-        dTree.deps[(g,d,sd_dType[3:])]=Dep(g,d,sd_dType[3:])
-    #print >> sys.stderr, dTree.deps.keys()
-
-    #we do preprocessing here, when the tree doesn't have
-    #any other dependencies messing things up.
-
-    #connect names and clear anything under them.
-    #TF.link_dependencies(dTree,["name"])
-
-    # connect conjuncts the way hki scheme does it.
-    #TF.conjunct_sd2hki(dTree)
-
-
-    # redo sdGS after transformation
-    sdGS=set()
-    for g,d,dType in dTree.deps:
-        sdGS.add((g,d,u"sd:"+dType))
-
-#3) now transform it
-    transformDTree(dTree)
-#4) now dump in all dependencies of interest
-    if not bare:
-        convertedDeps=dTree.deps
-        dTree.deps={}
-        for (g,d,sd_dType) in sdGS:
-            newD=Dep(g,d,sd_dType)
-            dTree.deps[(g,d,sd_dType)]=newD
-        for (g,d,dType) in convertedDeps:
-            newD=Dep(g,d,"cv:"+dType)
-            dTree.deps[(g,d,"cv:"+dType)]=newD
-            if (g,d,u"h:"+dType) in hGS: #this one is correct
-                newD.flags.append(u"correct")
-            else: #this one is incorrect
-                newD.flags.append(u"wrong")
-        for (g,d,h_dType) in hGS:
-            dType=h_dType[2:]
-            if (g,d,dType) not in convertedDeps: #this one is missing
-                newD=Dep(g,d,"cv:"+dType)
-                dTree.deps[(g,d,"cv:"+dType)]=newD
-                newD.flags.append("missing")
-    #Done
+    deps,edeps=dep_sets(tree)
     
 
-def transformDTree(dTree):
-    """Takes one Tree() and *modifies it in place*, giving the new dependency structure"""
-    lp2lp_tokens=[t.text for t in dTree.tokens]
-    lp2lp_deps=[]
-    lp2lp_readings=[[r[:3] for r in t.posTags] for t in dTree.tokens]
-    for (g,d,dType) in dTree.deps:
+    for cols in tree:
+        d2d_tokens.append(cols[FORM])
+        d2d_lemmas.append(cols[LEMMA])
+        d2d_features.append([cols[UPOS]]+cols[FEAT].split(u"|"))
+
+    for (g,d,dType) in deps:
         dType=dType.encode("utf-8")
-        lp2lp_deps.append((g,d,dType))
-    res=lp2lp.transformSentence(lp2lp_tokens,lp2lp_deps,lp2lp_readings)
+        d2d_deps.append((g,d,dType))
+
+    assert not deps&edeps
+    for (g,d,dType) in edeps:
+        dType=dType.encode("utf-8")
+        d2d_deps.append((g,d,dType))
+
+    #{stratum -> list of [tok1,tok2,Type]}
+    res=lp2lp.transformSentence(d2d_tokens,d2d_lemmas,d2d_deps,d2d_features)
+
     #...and now translate back to our new format
-    transformed={} #as in Tree()
+    transformed=set() #new deps
+    etransformed=set() #new edeps
     strata=sorted(res)
     #print >> sys.stderr, res[strata[-1]]
-    consumed_deps=set() #set of (g,d,t) origins
+    consumed_deps=set() #set of (g,d,t) origins (dependencies marked with @ in the rules)
+    consumed_edeps=set() #set of (g,d,t) enhanced origins (dependencies marked with @ in the rules)
     for g,d,dType,old_g,old_d,old_dType,comment in res[strata[-1]]:
-        new_d=Dep(g,d,dType)
-        new_d.flags.append(u"converted") #Converted
-        if dType!=u"XXX" and dType!=u"root" and not dType.startswith(u"Arg"):
-            transformed[(g,d,dType)]=new_d #no need to worry about duplicates - flatten them if present
-        misc=[]
+        
         if old_dType!="None":
-            misc.append(u"origin=(%d,%d,%s,%d,%d,%s)"%(g+1,d+1,dType,old_g+1,old_d+1,old_dType))
-            oldd=dTree.origDeps[(old_g,old_d,old_dType)]
-            if u"L2" in oldd.flags:
-                new_d.flags.append(u"L2")
+            if (old_g,old_d,old_dType) in deps: #base layer -> base_layer
+                transformed.add((g,d,dType))
+                consumed_deps.add((old_g,old_d,old_dType))
+            elif (old_g,old_d,old_dType) in edeps: #enhanced -> enhanced
+                etransformed.add((g,d,dType))
+                consumed_edeps.add((old_g,old_d,old_dType))
             else:
-                new_d.flags.append(u"L1")
-            consumed_deps.add((old_g,old_d,old_dType))
-        if comment and comment!="EMPTYCOMMENT":
-            misc.append(u"comment(%d,%d,%s)=\"%s\""%(g+1,d+1,dType,comment))
-        if misc:
-            new_d.misc=u"|".join(misc)
+                assert False
         else:
-            new_d.misc=u""
-    for (g,d,t),dep in dTree.deps.iteritems():
-        if (g,d,t) not in consumed_deps and t!=u"root" and not t.startswith(u"Arg"):# and t in ud_types:
-            transformed[(g,d,t)]=dep
-            dep.flags.append(u"passed") #original, pass
-            if u"L2" in dTree.origDeps[(g,d,t)].flags:
-                dep.flags.append(u"L2")
-    dTree.deps=transformed
-    #and we're done
+            assert False, "Unknown origin"
 
-def transformTreeset(treeset,bare=False):
-    for tree in treeset.sentences:
-        transformSD2HKI(tree,bare)
-    
+    #pass whatever was not consumed
+    transformed.update(deps-consumed_deps)
+    etransformed.update(edeps-consumed_edeps)
+    return transformed, etransformed
+
+def update_deps(tree, new_deps, new_edeps):
+    """tree is what we've got from conllu, new_deps and new_edeps is produced by the transformation"""
+    for cols in tree:
+        cols[HEAD],cols[DEPREL],cols[DEPS]=u"_",u"_",u"_"
+    edeps_lists=[[] for _ in range(len(tree))] #list of (g,dtype) for every token, or empty
+    for g,d,t in new_deps:
+        assert tree[d][DEPREL]==u"_", (g,d,t)
+        tree[d][DEPREL]=t
+        tree[d][HEAD]=unicode(g+1)
+    for g,d,t in new_edeps:
+        edeps_lists[d].append((g,t))
+    for cols,edeps_list in zip(tree,edeps_lists):
+        if edeps_list:
+            cols[DEPS]=u"|".join(unicode(g+1)+u":"+t for g,t in sorted(edeps_list))
+
+def transform_all(inp):
+    for tree,comments in read_conll(inp):
+        if len(tree)>1:
+            transformed,etransformed=transform_tree(tree)
+            update_deps(tree,transformed,etransformed)
+        print (u"\n".join(comments)).encode("utf-8")
+        for cols in tree:
+            print (u"\t".join(cols)).encode("utf-8")
+        print
+
 
 def compileAndLoadRuleset(ruleset=None):
     import lp2lp2pl
@@ -173,18 +178,11 @@ def compileAndLoadRuleset(ruleset=None):
     load_ruleset(plFile)
     print >> sys.stderr, "Ruleset reloaded"
 
-def transformFiles(fNameIn,fNameOut):
-    tset=TreeSet.fromFile(fNameIn)
-    transformTreeset(tset)
-    tset.fileName=fNameOut
-    tset.save()
-
 if __name__=="__main__":
     from optparse import OptionParser
     import lp2lp2pl
     parser = OptionParser(description="Transforms a conllu file (stdin) using the specified rules into a new dependency format and dumps the result to stdout")
     parser.add_option("-r", "--ruleset", dest="ruleset", default=None, help="The .pl or .lp2lp file specifying the rules", metavar="FILE")
-    parser.add_option("--marked",dest="marked",default=False, action="store_true", help="Assume sd: h: marked input. No marking, and SD is assumed by default.")
     (options, args) = parser.parse_args()
 
     if not options.ruleset:
@@ -202,13 +200,11 @@ if __name__=="__main__":
         options.ruleset=plFile
 
     load_ruleset(options.ruleset)
-    inp=sys.stdin
-    outp=sys.stdout
-    tset=TreeSet.fromCONLLU(inp)
-#    tset.fileName=fNameOut
-    transformTreeset(tset, not options.marked)
-    tset.save_conllu(sys.stdout)
-    print >> sys.stderr, "   ...ok"
+    transform_all(sys.stdin)
+
+    
+    #tset.save_conllu(sys.stdout)
+    #print >> sys.stderr, "   ...ok"
 
 
 

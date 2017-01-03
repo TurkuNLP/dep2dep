@@ -27,7 +27,7 @@ typedef struct {
     int token_old_1Seq;
     int token_old_2Seq;
     char *old_depType;
-  char *comment;
+    char *comment;
 } LP2LP_dep_t;
 
 /* 

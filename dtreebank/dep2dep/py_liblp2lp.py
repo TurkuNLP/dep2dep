@@ -17,22 +17,16 @@ class LP2LP:
 
     #Returns a dictionary with strata as keys and dependency
     #lists as values
-    def transformSentence(self,tokenList,dependencyList,tokenReadings):
+    def transformSentence(self,tokenList,lemmaList,dependencyList,tokenTagList):
         self.lp2lp.LP2LP_new_sentence()
         for idx,t in enumerate(tokenList):
             self.lp2lp.LP2LP_new_token(idx,t)
             #print >> sys.stderr, ">>>", idx, t
-        for tidx,tRs in enumerate(tokenReadings):
-            for ridx,(cg,base,tags) in enumerate(tRs):
-                tags=tags.split("|")
-                arr = (c_wchar_p * (len(tags)))()
-                for idx,tag in enumerate(tags):
-                    arr[idx]=tag
-                if cg:
-                    cgInt=1
-                else:
-                    cgInt=0
-                self.lp2lp.LP2LP_new_reading(tidx,ridx,cgInt,base,len(tags),arr)
+        for tidx,(lemma,tags) in enumerate(zip(lemmaList,tokenTagList)):
+            arr = (c_wchar_p * (len(tags)))()
+            for idx,tag in enumerate(tags):
+                arr[idx]=tag
+            self.lp2lp.LP2LP_new_reading(tidx,0,1,lemma,len(tags),arr)
         for (gov,dep,dType) in dependencyList:
             self.lp2lp.LP2LP_new_dependency(gov,dep,dType)
             #print >> sys.stderr, ">>>", idx1, idx2, dType

@@ -57,5 +57,5 @@
 % naturally, you can only refer to strata at or below the current one
 
 
-[ N M ('discourse') ""] : [ @[ N M-"mitä" (".*") ] ]
+[ N M ('hiho') ""] : [ @[ N M ("nmod") ] ]
 
