@@ -10,6 +10,9 @@
 %
 % Gov and Dep are given as variables (start with letter, then letters and digits and underscores...
 
+% Word order syntax
+%  W1..W2    - W2 must come later than W1 in word order
+
 % MACRO syntax
 % you can define macros for lists of words etc
 % copula = "am|are|is|be|was|were|'m|'re|'s|s|seem|seems|seemed|appear|appears|appeared|stay|stays|stayed|remain|remains|remained|resemble|resembles|resembled|become|becomes|became"
@@ -56,9 +59,33 @@
 % rather than stratum 1 which is the default for this particular rule
 % naturally, you can only refer to strata at or below the current one
 
+% Direct prolog rules
+%
+% For more special purposes, a rule can be defined straight in Prolog like such:
+% 
+% %%plrule: rule(NewGov, NewDep, 'dtype', OldGov, OldDep, 'olddtype', Stratum, "Comment") :- any prolog code on a single line.
+%
+
+
+%%%% Some examples
+
+% Rewrite rules for UD ver 1 -> UD ver 2
 
 [ Gov Dep ('obj') ""] : [ @[ Gov Dep ("dobj") ] ]
 [ Gov Dep ('nsubj:pass') ""] : [ @[ Gov Dep ("nsubjpass") ] ]
 [ Gov Dep ('csubj:pass') ""] : [ @[ Gov Dep ("csubjpass") ] ]
 [ Gov Dep ('aux:pass') ""] : [ @[ Gov Dep ("auxpass") ] ]
+
+
+% The two rules below rehang punct and cc from the head of the coordination to the first conjunct which follows them
+% These rules were created like so:
+%   1) generated the normal code for [ [ CONJHEAD PUNCT ("punct") ] [CONJHEAD CONJUNCT ("conj") ] CONJHEAD..PUNCT PUNCT..CONJUNCT ] 
+%   2) added the \+ ( ... ) block at the end which basically says there is no intervening CONJUNCT, ie the punct will hang on the one which immediately follows
+
+%%plrule: rule(TCONJUNCT,TPUNCT,'punct',OG,OD,OT,1,"EMPTYCOMMENT") :- dependency(TCONJHEAD,TCONJUNCT,LT2,0),accepts('^(conj)$',LT2), TCONJUNCT \= TCONJHEAD, dependency(TCONJHEAD,TPUNCT,LT3,0),accepts('^(punct)$',LT3), OG=TCONJHEAD,OD=TPUNCT,OT=LT3, TCONJHEAD \= TCONJUNCT, TPUNCT \= TCONJUNCT, TPUNCT \= TCONJHEAD, tokenOrder(TCONJHEAD,TPUNCT), tokenOrder(TPUNCT,TCONJUNCT), \+ ( dependency(TCONJHEAD,TCONJUNCTINB,LT1,0),accepts('^(conj)$',LT1), tokenOrder(TCONJUNCTINB,TCONJUNCT), tokenOrder(TPUNCT,TCONJUNCTINB), TCONJHEAD \= TCONJUNCTINB, TPUNCT \= TCONJUNCTINB ).
+
+%%plrule: rule(TCONJUNCT,TPUNCT,'cc',OG,OD,OT,1,"EMPTYCOMMENT") :- dependency(TCONJHEAD,TCONJUNCT,LT2,0),accepts('^(conj)$',LT2), TCONJUNCT \= TCONJHEAD, dependency(TCONJHEAD,TPUNCT,LT3,0),accepts('^(cc)$',LT3), OG=TCONJHEAD,OD=TPUNCT,OT=LT3, TCONJHEAD \= TCONJUNCT, TPUNCT \= TCONJUNCT, TPUNCT \= TCONJHEAD, tokenOrder(TCONJHEAD,TPUNCT), tokenOrder(TPUNCT,TCONJUNCT), \+ ( dependency(TCONJHEAD,TCONJUNCTINB,LT1,0),accepts('^(conj)$',LT1), tokenOrder(TCONJUNCTINB,TCONJUNCT), tokenOrder(TPUNCT,TCONJUNCTINB), TCONJHEAD \= TCONJUNCTINB, TPUNCT \= TCONJUNCTINB ).
+
+
+
 

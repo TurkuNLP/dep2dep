@@ -26,7 +26,9 @@ import lex
 
 macros={}
 
-tokens=('LBRAC', 'RBRAC', 'LPAR', 'RPAR', 'NUM', 'COL','DQSTR','SQSTR','DASH','VAR','EQSIGN','NEG','BACKREF', 'STRATUM', 'CONCAT', 'ORIGIN')
+plrules=[]
+
+tokens=('LBRAC', 'RBRAC', 'LPAR', 'RPAR', 'NUM', 'COL','DQSTR','SQSTR','DASH','VAR','EQSIGN','NEG','BACKREF', 'STRATUM', 'CONCAT', 'ORIGIN', 'PLRULE')
 
 t_LBRAC=r'\['
 t_RBRAC=r'\]'
@@ -44,6 +46,12 @@ t_NEG=r"!"
 t_ORIGIN=r"@"
 t_BACKREF=r'\\[0-9]+'
 t_STRATUM=r'[0-9]+::'
+
+
+def t_PLRULE(t):
+    r'\%\%\s*plrule\s*:\s*.*'
+    t.value=t.value.split(":",1)[1].strip()
+    plrules.append(t.value)
 
 # Define a rule so we can track line numbers
 def t_newline(t):
@@ -89,7 +97,9 @@ def p_statements2(p):
 
 def p_statement(p):
     '''statement : rule
-                 | macro'''
+                 | macro
+                 | PLRULE
+    '''
     if p[1]: #It's a rule
         p[0]=p[1]
 
@@ -414,6 +424,9 @@ def convert(iFile,oFile,module=None):
     print >> oFile, ""
     print >> oFile, "%rule(token1,token2,dependency,stratum to which the dependency is generated"
     print>> oFile, ""
+    print >> oFile, "% PROLOG RULES PASSED FROM THE RULE FILE"
+    print >> oFile, "\n\n".join(plrules)
+    print >> oFile, "\n\n% GENERATED PROLOG RULES"
     for r in rules:
         rpl=r.toPL()
         print >> oFile, rpl
