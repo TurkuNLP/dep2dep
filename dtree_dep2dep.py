@@ -10,13 +10,7 @@ import glob
 
 LP2LPDIR=os.path.dirname(os.path.abspath(__file__))
 sys.path.append(LP2LPDIR)
-sys.path.append(os.path.join(LP2LPDIR,'..','..'))
 from py_liblp2lp import LP2LP
-
-from dtreebank.core.treeset import TreeSet
-from dtreebank.core.tree import Dep
-
-import dtreebank.core.tree_functions as TF
 
 lp2lp=LP2LP(LP2LPDIR) #Loads lp2lp
 
