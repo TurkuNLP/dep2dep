@@ -14,10 +14,6 @@ you need to have the following environment:
         - libpcre
 
 
-3) Recent Python (tested with 2.4 and 2.5)
+3) A 2.X Python
 
 Then just type 'make'.
-
-The setup is tested on Ubuntu Linux 7.04 as well as Gentoo linux
-with recent SWI prolog installed and PCRE install from the
-distro's package manager.
