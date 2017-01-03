@@ -57,5 +57,8 @@
 % naturally, you can only refer to strata at or below the current one
 
 
-[ N M ('hiho') ""] : [ @[ N M ("nmod") ] ]
+[ Gov Dep ('obj') ""] : [ @[ Gov Dep ("dobj") ] ]
+[ Gov Dep ('nsubj:pass') ""] : [ @[ Gov Dep ("nsubjpass") ] ]
+[ Gov Dep ('csubj:pass') ""] : [ @[ Gov Dep ("csubjpass") ] ]
+[ Gov Dep ('aux:pass') ""] : [ @[ Gov Dep ("auxpass") ] ]
 
