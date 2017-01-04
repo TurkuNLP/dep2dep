@@ -99,12 +99,16 @@ def transform_tree(tree):
         dType=dType.encode("utf-8")
         d2d_deps.append((g,d,dType))
 
-    assert not deps&edeps
+    #If you trip this assert, maybe edeps-=deps ...? But then one somehow needs to get them back later...
+    assert not deps&edeps, "Whoa! We have an overlap between base and deps. Not ready for this for the time being, but could handle easily"
     for (g,d,dType) in edeps:
         dType=dType.encode("utf-8")
         d2d_deps.append((g,d,dType))
 
-    #{stratum -> list of [tok1,tok2,Type]}
+    # {stratum -> list of (newGov,newDep,newType,oldGov,oldDep,oldType,comment)}
+    # For oldGov,oldDep,oldType (0,0,'None') is given in case the new dependency is not produced from an old one
+    # If the rule has no comment, then the string "EMPTYCOMMENT" is returned
+    # The original dep list is returned too, at stratum 0
     res=lp2lp.transformSentence(d2d_tokens,d2d_lemmas,d2d_deps,d2d_features)
 
     #...and now translate back to our new format
@@ -114,8 +118,11 @@ def transform_tree(tree):
     #print >> sys.stderr, res[strata[-1]]
     consumed_deps=set() #set of (g,d,t) origins (dependencies marked with @ in the rules)
     consumed_edeps=set() #set of (g,d,t) enhanced origins (dependencies marked with @ in the rules)
+
+    comments={} #key: (newg,newd,newt)  value: list of (oldG,oldD,oldT,comment)
+
     for g,d,dType,old_g,old_d,old_dType,comment in res[strata[-1]]:
-        
+        comments.setdefault((g,d,dType),[]).append((old_g,old_d,old_dType,comment))
         if old_dType!="None":
             if (old_g,old_d,old_dType) in deps: #base layer -> base_layer
                 transformed.add((g,d,dType))
@@ -126,20 +133,24 @@ def transform_tree(tree):
             else:
                 assert False
         else:
-            assert False, "Unknown origin"
+            print >> sys.stderr, (u"The origin of %s(%s,%s) dependency is unknown, and I don't know whether to put it into base or enhanced dependencies. You should mark one of the dependencies on the right-hand side of the rule with @."%(dType,tree[g][FORM],tree[d][FORM])).encode("utf-8")
+            assert False, "Erring on the side of caution and bailing out."
+
 
     #pass whatever was not consumed
     transformed.update(deps-consumed_deps)
     etransformed.update(edeps-consumed_edeps)
-    return transformed, etransformed
+    return transformed, etransformed, comments
 
-def update_deps(tree, new_deps, new_edeps):
-    """tree is what we've got from conllu, new_deps and new_edeps is produced by the transformation"""
+def update_deps(tree, new_deps, new_edeps, comments):
+    """tree is what we've got from conllu, new_deps, new_edeps, comments is produced by the transformation"""
+    conllu_comments=[]
     for cols in tree:
-        cols[HEAD],cols[DEPREL],cols[DEPS]=u"_",u"_",u"_"
+        cols[HEAD],cols[DEPREL],cols[DEPS]=u"0",u"root",u"_"
     edeps_lists=[[] for _ in range(len(tree))] #list of (g,dtype) for every token, or empty
+    misc_lists=[[] if cols[MISC]=="_" else cols[MISC].split("|") for cols in tree]
     for g,d,t in new_deps:
-        assert tree[d][DEPREL]==u"_", (g,d,t)
+        assert tree[d][DEPREL]==u"root", (g,d,t)
         tree[d][DEPREL]=t
         tree[d][HEAD]=unicode(g+1)
     for g,d,t in new_edeps:
@@ -148,12 +159,25 @@ def update_deps(tree, new_deps, new_edeps):
         if edeps_list:
             cols[DEPS]=u"|".join(unicode(g+1)+u":"+t for g,t in sorted(edeps_list))
 
+    for (g,d,t),comment_lst in comments.iteritems():
+        for (oldG,oldD,oldT,comment) in comment_lst:
+            if comment not in ("None","EMPTYCOMMENT"):
+                misc_lists[d].append(u"d2d:"+unicode(comment).replace(" ","_"))
+            if oldT!="None":
+                conllu_comments.append(u"# d2d: %s(%s,%s) -> %s(%s,%s)  %s"%(oldT,tree[oldG][FORM],tree[oldD][FORM],t,tree[g][FORM],tree[d][FORM],comment))
+            else:
+                conllu_comments.append(u"# d2d: newdep %s(%s,%s)  %s"%(t,tree[g][FORM],tree[d][FORM],comment))
+    for cols,misc in zip(tree,misc_lists):
+        cols[MISC]=u"_" if not misc else u"|".join(misc)
+    return conllu_comments
+
+
 def transform_all(inp):
-    for tree,comments in read_conll(inp):
+    for tree,conllu_comments in read_conll(inp):
         if len(tree)>1:
-            transformed,etransformed=transform_tree(tree)
-            update_deps(tree,transformed,etransformed)
-        print (u"\n".join(comments)).encode("utf-8")
+            transformed,etransformed,comments=transform_tree(tree)
+            conllu_comments.extend(update_deps(tree,transformed,etransformed,comments)) #updated tree in place, returns more conllu comments
+        print (u"\n".join(conllu_comments)).encode("utf-8")
         for cols in tree:
             print (u"\t".join(cols)).encode("utf-8")
         print

@@ -71,7 +71,7 @@
 
 % Rewrite rules for UD ver 1 -> UD ver 2
 
-[ Gov Dep ('obj') ""] : [ @[ Gov Dep ("dobj") ] ]
+[ Gov Dep ('obj') "comment if you need"] : [ @[ Gov Dep ("dobj") ] ]
 [ Gov Dep ('nsubj:pass') ""] : [ @[ Gov Dep ("nsubjpass") ] ]
 [ Gov Dep ('csubj:pass') ""] : [ @[ Gov Dep ("csubjpass") ] ]
 [ Gov Dep ('aux:pass') ""] : [ @[ Gov Dep ("auxpass") ] ]
