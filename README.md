@@ -42,3 +42,7 @@ you need to have the following environment:
 3) A 2.X Python with header files
 
 Then just type 'make'.
+
+## Debugging
+
+The `Makefile` and `dtree_dep2dep.sh` have few hard-coded paths. So if you have libraries and headers in non-standard locations, then you may get errors about missing symbols and the like. Just check and fix these paths.
