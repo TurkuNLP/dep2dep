@@ -8,7 +8,7 @@ Applies rewrite rules from `example_rules.lp2lp` to a small fragment of the Engl
 
 # Installation
 
-`dep2dep` uses Prolog as the back-end rule application engine, and a little shimming module to pass data between Python and Prolog, which needs to be compiled. On a newish system, this should be as easy as typing `make`.
+`dep2dep` uses Prolog as the back-end rule application engine, and a little shimming module to pass data between Python and Prolog, which needs to be compiled (no Cython back then). On a newish system, this should be as easy as typing `make`.
 
 ## Ubuntu
 
