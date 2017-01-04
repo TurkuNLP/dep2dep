@@ -1,8 +1,8 @@
 Treebank transformation tool. A vintage 2008 code, revived for Universal Dependencies treebank conversions.
 
-# Example
+# Running
 
-Applies rewrite rules from `example_rules.lp2lp` to a small fragment of the English UD treebank.
+Apply rewrite rules from `example_rules.lp2lp` to a small fragment of the English UD treebank. CoNLL-U in. CoNLL-U out.
 
     ./dtree_dep2dep.sh -r example_rules.lp2lp < ud_english_example.conllu > ud_english_example_tr.conllu
 
