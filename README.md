@@ -10,9 +10,11 @@ Applies rewrite rules from `example_rules.lp2lp` to a small fragment of the Engl
 
 # Installation
 
-## On Ubuntu 16.04 and probably other recent versions
+`dep2dep` uses Prolog as the back-end rule application engine, and a little shimming module to pass data between Python and Prolog, which needs to be compiled. On a newish system, this should be as easy as typing `make`.
 
-The following is tested to work on the official [Ubuntu cloud image](https://help.ubuntu.com/lts/serverguide/cloud-images-and-uvtool.html)
+## Ubuntu
+
+The following is tested to work on the official [Ubuntu cloud image](https://help.ubuntu.com/lts/serverguide/cloud-images-and-uvtool.html) 16.04
 
 ```
 sudo apt install git build-essential swi-prolog-nox libpcre3-dev python-dev 
