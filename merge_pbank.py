@@ -3,6 +3,7 @@
 # can be referred to by the conversion rules
 
 import codecs
+import sys
 
 ID,FORM,LEMMA,FEAT,UPOS,XPOS,HEAD,DEPREL,DEPS,MISC=range(10)
 
@@ -56,6 +57,13 @@ if __name__=="__main__":
     for (tb_tree,tb_comments), (pb_tree,_) in zip(tb,pb):
         assert len(tb_tree)==len(pb_tree), "Trees of differing lengths, bailing out. %d vs %d"%(len(tb_tree),len(pb_tree))
         for tb_cols,pb_cols in zip(tb_tree,pb_tree):
+            if pb_cols[MISC]!=u"_":
+                pbsenses=u"|".join((m for m in pb_cols[MISC].split(u"|") if u"PBSENSE" in m))
+                if pbsenses:
+                    if tb_cols[MISC]==u"_":
+                        tb_cols[MISC]=pbsenses
+                    else:
+                        tb_cols[MISC]=pbsenses+u"|"+tb_cols[MISC]
             if pb_cols[DEPS]==u"_":
                 continue
             pb_args=[arg for arg in pb_cols[DEPS].split(u"|") if u"PBArg" in arg]
@@ -71,6 +79,3 @@ if __name__=="__main__":
         print (u"\n".join(tb_comments)).encode("utf-8")
         print (u"\n".join(u"\t".join(cols) for cols in tb_tree)).encode("utf-8")
         print
-
-                
-                
