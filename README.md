@@ -1,5 +1,3 @@
-# dep2dep
-
 Treebank transformation tool. A vintage 2008 code, revived for Universal Dependencies treebank conversions.
 
 # Example
