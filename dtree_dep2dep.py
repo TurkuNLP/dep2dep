@@ -29,7 +29,7 @@ lp2lp=LP2LP(LP2LPDIR) #Loads lp2lp
 
 #Here are the interface functions
 
-ID,FORM,LEMMA,FEAT,UPOS,XPOS,HEAD,DEPREL,DEPS,MISC=range(10)
+ID,FORM,LEMMA,UPOS,XPOS,FEAT,HEAD,DEPREL,DEPS,MISC=range(10)
 
 def read_conll(inp,maxsent=0):
     """ Read conll format file and yield one sentence at a time as a list of lists of columns. If inp is a string it will be interpreted as filename, otherwise as open file for reading in unicode"""
