@@ -287,26 +287,22 @@ class WordSpec:
         if wordform:
             parts=wordform.split("&")
             for part in parts:
-                if part.startswith("TWB:"):
-                    self.twb="^("+part[4:]+")$"
-                elif part.startswith("CGB:"):
-                    self.cgb="^("+part[4:]+")$"
-                elif part.startswith("TWT:"):
-                    self.twts=part[4:].split("+")
-                elif part.startswith("CGT:"):
+                if part.startswith("LEMMA:"):
+                    self.cgb="^("+part[6:]+")$"
+                elif part.startswith("TAG:"):
                     self.cgts=part[4:].split("+")
                 else:
                     self.wordform="^(%s)$"%part.replace("'",r"\'")
 
     def toPL(self):
         parts=[]
-        if self.twb:
-            parts.append("readingTWBase(T%s,T%sR,'%s')"%(self.handle,self.handle,self.twb))
-        if self.cgb:
+#        if self.twb:
+#            parts.append("readingTWBase(T%s,T%sR,'%s')"%(self.handle,self.handle,self.twb))
+        if self.cgb: #cgbase
             parts.append("readingCGBase(T%s,T%sR,'%s')"%(self.handle,self.handle,self.cgb))
-        for twt in self.twts:
-            parts.append("readingTWTag(T%s,T%sR,'%s')"%(self.handle,self.handle,twt))
-        for cgt in self.cgts:
+#        for twt in self.twts:
+#            parts.append("readingTWTag(T%s,T%sR,'%s')"%(self.handle,self.handle,twt))
+        for cgt in self.cgts: #cgtags
             parts.append("readingCGTag(T%s,T%sR,'%s')"%(self.handle,self.handle,cgt))
         if parts:
             parts.insert(0,"reading(T%s,T%sR)"%(self.handle,self.handle))
