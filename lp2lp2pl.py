@@ -231,7 +231,8 @@ class Condition:
         else:
             self.dep,self.gov,self.lType=rWordSpec,lWordSpec,lType
             self.forceDir="any"
-        self.lType="^(%s)$"%self.lType
+        if not self.lType.startswith("^"):
+            self.lType="^(%s)$"%self.lType
         self.macro=macro
         self.stratum=stratum
 
