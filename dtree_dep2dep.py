@@ -122,6 +122,7 @@ def transform_tree(tree):
     comments={} #key: (newg,newd,newt)  value: list of (oldG,oldD,oldT,comment)
 
     for g,d,dType,old_g,old_d,old_dType,comment in res[strata[-1]]:
+        dType=dType.replace(">","").replace("<","")
         comments.setdefault((g,d,dType),[]).append((old_g,old_d,old_dType,comment))
         if old_dType!="None":
             if (old_g,old_d,old_dType) in deps: #base layer -> base_layer
@@ -150,7 +151,7 @@ def update_deps(tree, new_deps, new_edeps, comments):
     edeps_lists=[[] for _ in range(len(tree))] #list of (g,dtype) for every token, or empty
     misc_lists=[[] if cols[MISC]=="_" else cols[MISC].split("|") for cols in tree]
     for g,d,t in new_deps:
-        assert tree[d][DEPREL]==u"root", (g,d,t)
+        assert tree[d][DEPREL]==u"root", ((g,d,t), u"now", tree[d][HEAD], tree[d][DEPREL], u" ".join(cols[FORM] for cols in tree))
         tree[d][DEPREL]=t
         tree[d][HEAD]=unicode(g+1)
     for g,d,t in new_edeps:
