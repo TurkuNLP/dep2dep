@@ -126,10 +126,12 @@ def transform_tree(tree):
         comments.setdefault((g,d,dType),[]).append((old_g,old_d,old_dType,comment))
         if old_dType!="None":
             if (old_g,old_d,old_dType) in deps: #base layer -> base_layer
-                transformed.add((g,d,dType))
+                if dType!="xxx":
+                    transformed.add((g,d,dType))
                 consumed_deps.add((old_g,old_d,old_dType))
             elif (old_g,old_d,old_dType) in edeps: #enhanced -> enhanced
-                etransformed.add((g,d,dType))
+                if dType!="xxx":
+                    etransformed.add((g,d,dType))
                 consumed_edeps.add((old_g,old_d,old_dType))
             else:
                 assert False
